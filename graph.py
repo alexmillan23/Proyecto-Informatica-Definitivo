@@ -1,6 +1,6 @@
+from node import *
+from segment import *
 import matplotlib.pyplot as plt
-from node import Node, Distance
-from segment import Segment, CalcCost
 
 
 class Graph:
@@ -9,51 +9,107 @@ class Graph:
         self.segments = []
 
 
-def AddNode(g, n):
-    if n in g.nodes:
-        return False
-    g.nodes.append(n)
+def GetReachableNodes(graph, start_node_name):
+    visited = set()
+    stack = [start_node_name]
+
+    while stack:
+        current = stack.pop()
+        if current in visited:
+            continue
+        visited.add(current)
+        current_node = None
+        for node in graph.nodes:
+            if node.name == current:
+                current_node = node
+                break
+        if not current_node:
+            continue
+        for neighbor in current_node.neighbors:
+            if neighbor.name not in visited:
+                stack.append(neighbor.name)
+
+    return list(visited)
+
+
+def AddNode(graph, node):
+    # first check if node exists already
+    for n in graph.nodes:
+        if n.name == node.name:
+            print("Error: Ya existe un nodo con el nombre", node.name)
+            return False
+
+    graph.nodes.append(node)
     return True
 
 
-def AddSegment(g, nombre, nameOriginNode, nameDestinationNode):
-    origen, destino = None, None
+def AddSegment(graph, name_or_segment, origin_name=None, destination_name=None):
+    if origin_name is not None and destination_name is not None:
+        # This is the old format call with separate parameters
+        segment_name = name_or_segment
 
-    for node in g.nodes:
-        if node.name == nameOriginNode:
-            origen = node
-        if node.name == nameDestinationNode:
-            destino = node
+        # Find the origin and destination nodes
+        orig_node = None
+        dest_node = None
+        for node in graph.nodes:
+            if node.name == origin_name:
+                orig_node = node
+            if node.name == destination_name:
+                dest_node = node
 
-    if not origen or not destino:
-        print(f"Error: Uno o ambos nodos no existen ({nameOriginNode}, {nameDestinationNode})")
-        return False
+        # If we couldn't find both nodes, return false
+        if not orig_node or not dest_node:
+            print("Error: No se encontró uno o ambos nodos para el segmento")
+            return False
 
-    seg = Segment(nombre, origen, destino)
-    seg.cost = CalcCost(seg)
-    g.segments.append(seg)
+        segment = Segment(segment_name, orig_node, dest_node)
+    else:
+        segment = name_or_segment
 
-    if destino not in origen.neighbors:
-        origen.neighbors.append(destino)
+        orig_node = None
+        dest_node = None
+        for node in graph.nodes:
+            if node.name == segment.orig.name:
+                orig_node = node
+            if node.name == segment.dest.name:
+                dest_node = node
 
+        if not orig_node or not dest_node:
+            print("Error: No se encontró uno o ambos nodos para el segmento")
+            return False
+
+    if dest_node not in orig_node.neighbors:
+        AddNeighbor(orig_node, dest_node)
+    if orig_node not in dest_node.neighbors:
+        AddNeighbor(dest_node, orig_node)
+    for s in graph.segments:
+        if s.name == segment.name:
+            return True
+
+    segment.orig = orig_node
+    segment.dest = dest_node
+
+    graph.segments.append(segment)
     return True
 
 
-def GetClosest(g, x, y):
-    if not g.nodes:
-        print("El grafo no tiene nodos.")
+def GetClosest(graph, coordx, coordy):
+    if not graph.nodes:
         return None
 
-    closest_node = None
+    closest = graph.nodes[0]
     min_distance = float('inf')
 
-    for node in g.nodes:
-        dist = Distance(Node("", x, y), node)
-        if dist < min_distance:
-            min_distance = dist
-            closest_node = node
+    for node in graph.nodes:
+        dx = node.coordx - coordx
+        dy = node.coordy - coordy
+        distance = (dx * dx + dy * dy) ** 0.5
 
-    return closest_node
+        if distance < min_distance:
+            closest = node
+            min_distance = distance
+
+    return closest
 
 
 def Plot(g):
@@ -70,100 +126,131 @@ def Plot(g):
         plt.arrow(segment.orig.coordx, segment.orig.coordy,
                   segment.dest.coordx - segment.orig.coordx,
                   segment.dest.coordy - segment.orig.coordy,
-                  head_width=0.05, head_length=0.05, fc='b', ec='b')
+                  head_width=0.05, head_length=0.05, fc='c', ec='c')
+
         midx = (segment.orig.coordx + segment.dest.coordx) / 2
         midy = (segment.orig.coordy + segment.dest.coordy) / 2
         plt.text(midx, midy, round(segment.cost, 3), fontsize=10, color='black', weight='bold')
 
+    plt.show()
+
 
 def PlotNode(g, nameOrigin):
-    origin = None
-    for node in g.nodes:
-        if node.name == nameOrigin:
-            origin = node
+    node = None
+    for n in g.nodes:
+        if n.name == nameOrigin:
+            node = n
             break
-
-    if not origin:
-        print(f"Error: Nodo {nameOrigin} no encontrado.")
+    if not node:
+        print("Error: No se encontró el nodo", nameOrigin)
         return False
 
-    plt.grid(color='red', linestyle='dashed', linewidth=0.5)
-    plt.title(f'Nodo {nameOrigin} y sus vecinos')
+    plt.figure()
+    plt.grid(color='red', linestyle='dotted', linewidth=0.5, alpha=0.5)
+    plt.title('Vecinos de ' + nameOrigin)
     plt.xlabel('Coordenada x')
     plt.ylabel('Coordenada y')
 
-    for node in g.nodes:
-        color = 'gray'
-        if node == origin:
-            color = 'blue'
-        elif node in origin.neighbors:
-            color = 'green'
-        plt.plot(node.coordx, node.coordy, marker='o', color=color, markersize=6)
-        plt.text(node.coordx + 0.1, node.coordy + 0.1, node.name, fontsize=10, color='g', weight='bold')
+    x_coords = [n.coordx for n in g.nodes]
+    y_coords = [n.coordy for n in g.nodes]
+    x_min, x_max = min(x_coords), max(x_coords)
+    y_min, y_max = min(y_coords), max(y_coords)
+    padding = max((x_max - x_min), (y_max - y_min)) * 0.1
+    plt.xlim(x_min - padding, x_max + padding)
+    plt.ylim(y_min - padding, y_max + padding)
 
-    for neighbor in origin.neighbors:
-        plt.arrow(origin.coordx, origin.coordy,
-                  neighbor.coordx - origin.coordx,
-                  neighbor.coordy - origin.coordy,
-                  head_width=0.05, head_length=0.05, fc='r', ec='r')
-        midx = (origin.coordx + neighbor.coordx) / 2
-        midy = (origin.coordy + neighbor.coordy) / 2
-        plt.text(midx, midy, round(Distance(origin, neighbor), 3), fontsize=10, color='black', weight='bold')
+    for segment in g.segments:
+        if segment.orig.name == nameOrigin or segment.dest.name == nameOrigin:
+            continue
+        plt.plot([segment.orig.coordx, segment.dest.coordx],
+                 [segment.orig.coordy, segment.dest.coordy], '-', color='gray', alpha=0.5)
 
-    plt.show()
+    for n in g.nodes:
+        if n.name == nameOrigin or n in node.neighbors:
+            continue
+        plt.plot(n.coordx, n.coordy, 'o', color='gray', markersize=6)
+        plt.text(n.coordx, n.coordy + 0.3, n.name, fontsize=10,
+                 ha='center', va='center', color='black')
+
+    for neighbor in node.neighbors:
+        plt.plot(neighbor.coordx, neighbor.coordy, 'o', color='blue', markersize=8)
+        plt.text(neighbor.coordx, neighbor.coordy + 0.3, neighbor.name, fontsize=10,
+                 ha='center', va='center', color='black', weight='bold')
+
+        plt.arrow(node.coordx, node.coordy,
+                  neighbor.coordx - node.coordx,
+                  neighbor.coordy - node.coordy,
+                  head_width=0.35, head_length=0.5, fc='green', ec='green',
+                  linewidth=1.2, length_includes_head=True, zorder=5)
+
+        mid_x = (node.coordx + neighbor.coordx) / 2
+        mid_y = (node.coordy + neighbor.coordy) / 2
+        cost = Distance(node, neighbor)
+        plt.text(mid_x, mid_y, f"{cost:.2f}", color='black', fontsize=9,
+                 ha='center', va='center', weight='bold')
+
+    plt.plot(node.coordx, node.coordy, 'o', color='red', markersize=10)
+    plt.text(node.coordx, node.coordy + 0.3, node.name, fontsize=12,
+             ha='center', va='center', color='black', weight='bold')
     return True
+
+
+def SaveGraphToFile(graph, filename):
+    try:
+        with open(filename, 'w') as file:
+            for node in graph.nodes:
+                file.write(f"Node {node.name} {node.coordx} {node.coordy}\n")
+            for segment in graph.segments:
+                file.write(f"Segment {segment.name} {segment.orig.name} {segment.dest.name}\n")
+            file.write("End\n")
+        print(f"Graph saved to {filename}")
+        return True
+    except Exception as e:
+        print("Error saving graph:", e)
+        return False
 
 
 def LoadGraphFromFile(filename):
     try:
-        with open(filename, 'r') as fichero:
+        with open(filename, 'r') as file:
             g = Graph()
-            for linea in fichero:
-                trozos = linea.strip().split(' ')
-                if trozos[0] == 'Node' and len(trozos) == 4:
-                    AddNode(g, Node(trozos[1], float(trozos[2]), float(trozos[3])))
-                elif trozos[0] == 'Segment' and len(trozos) == 4:
-                    AddSegment(g, trozos[1], trozos[2], trozos[3])
-                else:
-                    print(f"Línea inválida: {linea.strip()}")
+            for line in file:
+                # split the line into parts
+                parts = line.strip().split(' ')
+
+                if parts[0] == 'Node' and len(parts) == 4:
+                    name = parts[1]
+                    x = float(parts[2])
+                    y = float(parts[3])
+                    AddNode(g, Node(name, x, y))
+
+                elif parts[0] == 'Segment' and len(parts) == 4:
+                    name = parts[1]
+                    origin = parts[2]
+                    destination = parts[3]
+
+                    orig_node = None
+                    dest_node = None
+                    for node in g.nodes:
+                        if node.name == origin:
+                            orig_node = node
+                        if node.name == destination:
+                            dest_node = node
+
+                    if orig_node and dest_node:
+                        segment = Segment(name, orig_node, dest_node)
+                        g.segments.append(segment)
+
+                        AddNeighbor(orig_node, dest_node)
+                        AddNeighbor(dest_node, orig_node)
+
             return g
-    except FileNotFoundError:
-        print(f"Error: Archivo {filename} no encontrado.")
+
+    except Exception as e:
+        print("Error loading graph:", e)
         return None
 
 
-def AddNodeGraphically(g, name, x, y):
-    new_node = Node(name, x, y)
-    if AddNode(g, new_node):
-        print(f"Nodo {name} añadido en ({x}, {y}).")
-    else:
-        print(f"El nodo {name} ya existe.")
-
-
-def AddSegmentGraphically(g, name, nameOriginNode, nameDestinationNode):
-    if AddSegment(g, name, nameOriginNode, nameDestinationNode):
-        print(f"Segmento {name} añadido entre {nameOriginNode} y {nameDestinationNode}.")
-    else:
-        print(f"No se pudo añadir el segmento {name}. Verifica los nodos.")
-
-
-def DeleteNodeGraphically(g, name):
-    found = False
-    for node in g.nodes:
-        if node.name == name:
-            found = True
-            g.nodes.remove(node)
-            g.segments = [s for s in g.segments if s.orig != node and s.dest != node]
-            print(f"Nodo {name} eliminado, junto con sus segmentos.")
-    if not found:
-        print(f"Nodo {name} no encontrado.")
-
-
-def SaveGraphToFile(graph, filename):
-    with open(filename, 'w') as file:
-        for node in graph.nodes:
-            file.write(f"Node {node.name} {node.coordx} {node.coordy}\n")
-        for segment in graph.segments:
-            file.write(f"Segment {segment.name} {segment.orig.name} {segment.dest.name}\n")
-        file.write("End\n")
-    print(f"Grafo guardado en {filename}")
+def FindShortestPath(g, origin, destination):
+    from path import FindShortestPath
+    return FindShortestPath(g, origin, destination)
