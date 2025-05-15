@@ -1,4 +1,2 @@
-Videos de la Versión 3:
-[Video Versión 3 Parte 1](https://github.com/user-attachments/files/20233345/Video.Version.3.Parte.1.Hecho.con.Clipchamp.zip)
-[Video Versión 3 Parte 2](https://github.com/user-attachments/files/20233348/Video.Version.3.Parte.2.Hecho.con.Clipchamp.zip)
-[Video Versión 3 Parte 3](https://github.com/user-attachments/files/20233354/Video.Version.3.Parte.3.Hecho.con.Clipchamp.zip)
+Debido a que GitHub solo acepta archivos de menos de 25MB, nos es imposible incluir el video completo en este archivo README. Adjuntamos el enlace al video en Drive:
+https://drive.google.com/file/d/1CglfOq2GWJEqG61Huqg08ZFBe60-9Hs9/view?usp=sharing
