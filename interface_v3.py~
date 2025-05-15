@@ -1,9 +1,9 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from graph import *
+from navAirport import *
 import matplotlib.pyplot as plt
-from test_graph import CreateGraph_1
-from path import FindShortestPath, PlotPath
+from airSpace import CreateGraph_1
+from test_airspace import FindShortestPath, PlotPath
 
 graph = None
 
@@ -164,7 +164,7 @@ def FindShortestPath(graph):
             return
 
         try:
-            from path import FindShortestPath as PathFindShortestPath
+            from test_airspace import FindShortestPath as PathFindShortestPath
             path = PathFindShortestPath(graph, start_node_name, end_node_name)
 
             if not path or not path.nodes:
@@ -235,7 +235,7 @@ def FindShortestPath(graph):
                         break
 
                 if segment_cost == 0:
-                    from node import Distance
+                    from navPoint import Distance
                     segment_cost = Distance(orig, dest)
 
                 total_cost += segment_cost
