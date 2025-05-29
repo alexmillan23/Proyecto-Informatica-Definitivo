@@ -6,7 +6,7 @@ class NavSegment:
 
 
 def navsegment_to_str(navsegment):
-    return f"Segment: {navsegment.origin_number} -> {navsegment.destination_number}, Distance: {navsegment.distance} km"
+    return f"Segmento: {navsegment.origin_number} -> {navsegment.destination_number}, Distancia: {navsegment.distance} km"
 
 
 def get_origin_number(navsegment):

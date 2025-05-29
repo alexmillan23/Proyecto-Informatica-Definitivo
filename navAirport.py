@@ -16,7 +16,7 @@ def add_star(navairport, navpoint_number):
 
 
 def navairport_to_str(navairport):
-    return f"Airport: {navairport.name}, SIDs: {len(navairport.sids)}, STARs: {len(navairport.stars)}"
+    return f"Aeropuerto: {navairport.name}, SIDs: {len(navairport.sids)}, STARs: {len(navairport.stars)}"
 
 
 def get_sids(navairport):
